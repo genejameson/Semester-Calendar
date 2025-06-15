@@ -1,29 +1,4 @@
-/* iPad specific optimizations */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .header {
-                padding: 40px;
-            }
-            
-            .logo {
-                width: 140px;
-                height: 140px;
-                font-size: 84px;
-            }
-            
-            .title {
-                font-size: 2.8em;
-            }
-            
-            .subtitle {
-                font-size: 1.4em;
-            }
-            
-            .file-button {
-                height: 80px;
-                font-size: 1.6em;
-                line-height: 74px;
-            }
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -212,6 +187,12 @@
             table-layout: fixed;
         }
 
+        .calendar th,
+        .calendar td {
+            width: 20% !important;
+            box-sizing: border-box;
+        }
+
         .calendar th {
             background: #f0f0f0;
             padding: 15px 10px;
@@ -220,7 +201,6 @@
             font-size: 1.3em;
             font-weight: bold;
             color: #333;
-            width: 20%;
         }
 
         .calendar td {
@@ -231,7 +211,21 @@
             font-size: 1em;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            width: 20%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar td.clickable {
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .calendar td.clickable:hover,
+        .calendar td.clickable:active {
+            background-color: #e8f4fd;
+            box-shadow: inset 0 0 8px rgba(218, 165, 32, 0.3);
+            transform: scale(1.02);
         }
 
         .date {
@@ -271,18 +265,86 @@
             font-size: 1em;
         }
 
-        .debug {
-            background: #f8f9fa;
-            border: 2px solid #6c757d;
+        .weekly-view {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 2px solid #DAA520;
+        }
+
+        .weekly-view.active {
+            display: block;
+        }
+
+        .weekly-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #DAA520;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .weekly-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .close-weekly {
+            background: linear-gradient(45deg, #DAA520, #B8860B);
+            color: #000;
+            border: 2px solid #000;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .weekly-days {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            min-height: 500px;
+        }
+
+        .weekly-day {
+            background: #f9f9f9;
+            border: 2px solid #333;
             border-radius: 10px;
             padding: 15px;
-            margin: 20px 0;
-            font-family: monospace;
+        }
+
+        .weekly-day-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #DAA520;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #DAA520;
+        }
+
+        .weekly-day-date {
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .weekly-content {
             font-size: 0.9em;
-            color: #495057;
-            white-space: pre-wrap;
-            max-height: 300px;
-            overflow-y: auto;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            min-height: 120px;
         }
 
         /* Responsive calendar sizing */
@@ -377,6 +439,33 @@
             }
         }
 
+        /* iPad specific optimizations */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .header {
+                padding: 40px;
+            }
+            
+            .logo {
+                width: 140px;
+                height: 140px;
+                font-size: 84px;
+            }
+            
+            .title {
+                font-size: 2.8em;
+            }
+            
+            .subtitle {
+                font-size: 1.4em;
+            }
+            
+            .file-button {
+                height: 80px;
+                font-size: 1.6em;
+                line-height: 74px;
+            }
+        }
+
         @media print {
             body {
                 background: white !important;
@@ -385,7 +474,8 @@
             }
             
             .header,
-            .upload-section {
+            .upload-section,
+            .weekly-view {
                 display: none !important;
             }
 
@@ -430,75 +520,43 @@
 
     <div id="calendarContainer" class="calendar-container"></div>
     
-    <div id="debug" class="debug" style="display: none;"></div>
+    <div id="weeklyView" class="weekly-view">
+        <div class="weekly-header">
+            <div id="weeklyTitle" class="weekly-title">Week View</div>
+            <button class="close-weekly" onclick="closeWeeklyView()">✕ Close</button>
+        </div>
+        <div id="weeklyDays" class="weekly-days"></div>
+    </div>
 
     <script>
-        let debugMode = true; // Enable debug for troubleshooting
         let allEventsByDate = {};
 
-        // Debug logging
-        function debugLog(message) {
-            if (debugMode) {
-                const debugDiv = document.getElementById('debug');
-                debugDiv.style.display = 'block';
-                const timestamp = new Date().toLocaleTimeString();
-                debugDiv.textContent += `[${timestamp}] ${message}\n`;
-                debugDiv.scrollTop = debugDiv.scrollHeight;
-                console.log(message);
-            }
-        }
-
-        // Status updates
         function updateStatus(message, type = 'info') {
             const statusDiv = document.getElementById('status');
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
-            debugLog(`STATUS: ${message}`);
         }
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            debugLog('App initialized');
             updateStatus('📱 Ready for file upload');
             
-            // File input handler - multiple event types for iPad compatibility
             const fileInput = document.getElementById('excelFile');
             fileInput.addEventListener('change', handleFileSelection);
             fileInput.addEventListener('input', handleFileSelection);
             
-            // Also add click logging
-            fileInput.addEventListener('click', function() {
-                debugLog('File input clicked');
-            });
             document.getElementById('printBtn').addEventListener('click', () => window.print());
-            
-            // Test XLSX library
-            if (typeof XLSX !== 'undefined') {
-                debugLog('✅ XLSX library loaded successfully');
-            } else {
-                debugLog('❌ XLSX library failed to load');
-                updateStatus('❌ Error: Excel library not loaded', 'error');
-            }
         });
 
         function handleFileSelection() {
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
-            debugLog(`File selection triggered`);
-            debugLog(`Files length: ${fileInput.files.length}`);
-            debugLog(`File selected: ${file ? file.name : 'none'}`);
-            
             if (file) {
-                debugLog(`File details: ${file.name}, ${file.size} bytes, type: ${file.type}`);
                 updateStatus(`📄 Selected: ${file.name}`, 'processing');
-                
-                // Add a small delay to ensure UI updates
                 setTimeout(() => {
                     loadExcelFile(file);
                 }, 100);
             } else {
-                debugLog('No file in selection');
                 updateStatus('❌ No file selected', 'error');
             }
         }
@@ -506,71 +564,51 @@
         function loadExcelFile(file) {
             try {
                 updateStatus('📊 Processing Excel file...', 'processing');
-                debugLog('Starting file read process');
                 
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     try {
-                        debugLog('FileReader onload triggered');
-                        
                         const data = new Uint8Array(e.target.result);
-                        debugLog(`File read: ${data.length} bytes`);
                         
                         if (typeof XLSX === 'undefined') {
                             throw new Error('XLSX library not available');
                         }
                         
                         const workbook = XLSX.read(data, {type: 'array'});
-                        debugLog(`Workbook created, sheets: ${workbook.SheetNames.join(', ')}`);
-                        
                         processExcelData(workbook);
                         
                         updateStatus(`✅ Calendar generated from ${file.name}`, 'success');
                         document.getElementById('printBtn').style.display = 'block';
                         
                     } catch (error) {
-                        debugLog(`Error in FileReader onload: ${error.message}`);
                         updateStatus(`❌ Error processing file: ${error.message}`, 'error');
                     }
                 };
                 
                 reader.onerror = function(error) {
-                    debugLog(`FileReader error: ${error}`);
                     updateStatus('❌ Error reading file', 'error');
                 };
                 
                 reader.readAsArrayBuffer(file);
                 
             } catch (error) {
-                debugLog(`Error in loadExcelFile: ${error.message}`);
                 updateStatus(`❌ Error: ${error.message}`, 'error');
             }
         }
 
         function processExcelData(workbook) {
             try {
-                debugLog('Starting Excel data processing');
-                
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                debugLog(`Processing sheet: ${firstSheetName}`);
-
                 const data = XLSX.utils.sheet_to_json(worksheet);
-                debugLog(`Converted to JSON: ${data.length} rows`);
 
                 if (data.length === 0) {
                     throw new Error('No data found in Excel file');
                 }
 
-                // Log first row for debugging
-                if (data.length > 0) {
-                    debugLog(`First row columns: ${Object.keys(data[0]).join(', ')}`);
-                }
-
                 const eventsByMonth = {};
                 let lastDate = null;
-                let processedCount = 0;
 
                 data.forEach((row, index) => {
                     try {
@@ -609,7 +647,6 @@
                         }
 
                         if (isNaN(eventDate.getTime())) {
-                            debugLog(`Row ${index}: Invalid date - ${dateValue}`);
                             return;
                         }
 
@@ -638,18 +675,15 @@
                         };
 
                         eventsByMonth[monthKey].push(eventObj);
-                        processedCount++;
                         
                     } catch (rowError) {
-                        debugLog(`Error processing row ${index}: ${rowError.message}`);
+                        // Skip problematic rows
                     }
                 });
 
-                debugLog(`Processed ${processedCount} events for ${Object.keys(eventsByMonth).length} months`);
                 generateCalendarHTML(eventsByMonth);
                 
             } catch (error) {
-                debugLog(`Error in processExcelData: ${error.message}`);
                 throw error;
             }
         }
@@ -666,7 +700,6 @@
                 }
 
                 const sortedMonths = Object.keys(eventsByMonth).sort();
-                debugLog(`Generating calendars for months: ${sortedMonths.join(', ')}`);
 
                 sortedMonths.forEach(monthKey => {
                     const [year, month] = monthKey.split('-').map(Number);
@@ -745,6 +778,18 @@
                                     event.date.getFullYear() === currentDate.getFullYear()
                                 );
 
+                                const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+                                allEventsByDate[dateKey] = dayEvents;
+
+                                if (dayEvents.length > 0) {
+                                    cell.classList.add('clickable');
+                                    cell.title = 'Tap to view detailed week view';
+                                    
+                                    cell.addEventListener('click', function() {
+                                        openWeeklyView(new Date(currentDate));
+                                    });
+                                }
+
                                 let isNoSchoolDay = false;
                                 if (dayEvents.length > 0) {
                                     isNoSchoolDay = dayEvents.some(event => {
@@ -761,7 +806,7 @@
                                     });
                                     
                                     if (isNoSchoolDay) {
-                                        cell.className = 'no-class';
+                                        cell.className = 'no-class clickable';
                                     }
                                 }
 
@@ -829,12 +874,170 @@
                     container.appendChild(monthContainer);
                 });
                 
-                debugLog('✅ Calendar HTML generated successfully');
-                
             } catch (error) {
-                debugLog(`Error in generateCalendarHTML: ${error.message}`);
                 throw error;
             }
+        }
+
+        function openWeeklyView(clickedDate) {
+            const date = new Date(clickedDate);
+            const dayOfWeek = date.getDay();
+            const monday = new Date(date);
+            monday.setDate(date.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+
+            const weekEnd = new Date(monday);
+            weekEnd.setDate(monday.getDate() + 4);
+            
+            const titleElement = document.getElementById('weeklyTitle');
+            titleElement.textContent = `Week of ${monday.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
+
+            const weeklyDays = document.getElementById('weeklyDays');
+            weeklyDays.innerHTML = '';
+
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            
+            for (let i = 0; i < 5; i++) {
+                const currentDate = new Date(monday);
+                currentDate.setDate(monday.getDate() + i);
+                
+                const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'weekly-day';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'weekly-day-header';
+                headerDiv.textContent = dayNames[i];
+                dayDiv.appendChild(headerDiv);
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'weekly-day-date';
+                dateDiv.textContent = currentDate.getDate();
+                dayDiv.appendChild(dateDiv);
+
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'weekly-content';
+
+                const dayEvents = allEventsByDate[dateKey] || [];
+                
+                if (dayEvents.length > 0) {
+                    const isNoSchoolDay = dayEvents.some(event => {
+                        const fields = [
+                            event.material || '',
+                            event.content || '',
+                            event.assignment || '',
+                            event.assessments || ''
+                        ];
+                        );
+                    });
+
+                    if (isNoSchoolDay) {
+                        dayEvents.forEach(event => {
+                            if (event.content && event.content.trim() !== '') {
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'no-school-content';
+                                contentDiv.textContent = event.content;
+                                contentContainer.appendChild(contentDiv);
+                            }
+                        });
+                    } else {
+                        dayEvents.forEach(event => {
+                            if (event.assessments && event.assessments.trim() !== '') {
+                                const assessmentText = event.assessments.toLowerCase();
+                                if (assessmentText.includes('exam') || assessmentText.includes('quiz')) {
+                                    const assessmentDiv = document.createElement('div');
+                                    assessmentDiv.className = 'assessment';
+                                    
+                                    let icon = '🔍';
+                                    if (assessmentText.includes('quiz')) {
+                                        icon = '✏️';
+                                    } else if (assessmentText.includes('exam')) {
+                                        icon = '📋';
+                                    }
+                                    
+                                    assessmentDiv.textContent = `• ${icon} ${event.assessments}`;
+                                    contentContainer.appendChild(assessmentDiv);
+                                }
+                            }
+                        });
+
+                        dayEvents.forEach(event => {
+                            if (event.content && event.content.trim() !== '') {
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'content';
+                                
+                                if (event.content.toLowerCase().includes('exam')) {
+                                    contentDiv.style.fontWeight = 'bold';
+                                    contentDiv.style.color = '#ff0000';
+                                    contentDiv.textContent = `• 📋 ${event.content}`;
+                                } else {
+                                    contentDiv.textContent = `• ${event.content}`;
+                                }
+                                contentContainer.appendChild(contentDiv);
+                            }
+                        });
+                    }
+                }
+
+                dayDiv.appendChild(contentContainer);
+                
+                const assignmentInfo = document.createElement('div');
+                assignmentInfo.style.cssText = `
+                    color: #0066cc;
+                    font-size: 0.85em;
+                    margin-top: 15px;
+                    padding: 10px;
+                `;
+
+                const assignmentItems = [];
+                
+                if (dayEvents.length > 0) {
+                    dayEvents.forEach(event => {
+                        if (event.assignment && String(event.assignment).trim() !== '') {
+                            assignmentItems.push(`• ${event.assignment}`);
+                        }
+                        
+                        if (event.due && String(event.due).trim() !== '') {
+                            let dueText = String(event.due).trim();
+                            
+                            if (/^\d{5}$/.test(dueText)) {
+                                const excelDate = parseInt(dueText);
+                                const convertedDate = new Date((excelDate - 25569 + 1) * 86400 * 1000);
+                                if (!isNaN(convertedDate.getTime())) {
+                                    dueText = convertedDate.toLocaleDateString();
+                                }
+                            }
+                            
+                            assignmentItems.push(`• Due: ${dueText}`);
+                        }
+                        
+                        if (event.assessments && String(event.assessments).trim() !== '') {
+                            assignmentItems.push(`• ${event.assessments}`);
+                        }
+                    });
+                }
+                
+                if (assignmentItems.length > 0) {
+                    assignmentItems.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.textContent = item;
+                        itemDiv.style.marginBottom = '5px';
+                        assignmentInfo.appendChild(itemDiv);
+                    });
+                }
+                
+                dayDiv.appendChild(assignmentInfo);
+                weeklyDays.appendChild(dayDiv);
+            }
+
+            document.getElementById('weeklyView').classList.add('active');
+            document.getElementById('weeklyView').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        function closeWeeklyView() {
+            document.getElementById('weeklyView').classList.remove('active');
         }
     </script>
 </body>
