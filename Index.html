@@ -538,11 +538,34 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing app...');
             updateStatus('📱 Ready for file upload');
             
+            // Test XLSX library
+            if (typeof XLSX !== 'undefined') {
+                console.log('✅ XLSX library loaded successfully');
+            } else {
+                console.error('❌ XLSX library failed to load');
+                updateStatus('❌ Excel library not loaded', 'error');
+            }
+            
             const fileInput = document.getElementById('excelFile');
-            fileInput.addEventListener('change', handleFileSelection);
-            fileInput.addEventListener('input', handleFileSelection);
+            console.log('File input element:', fileInput);
+            
+            fileInput.addEventListener('change', function(e) {
+                console.log('Change event triggered');
+                handleFileSelection();
+            });
+            
+            fileInput.addEventListener('input', function(e) {
+                console.log('Input event triggered');
+                handleFileSelection();
+            });
+            
+            // Test file input click
+            fileInput.addEventListener('click', function(e) {
+                console.log('File input clicked');
+            });
             
             document.getElementById('printBtn').addEventListener('click', () => window.print());
         });
