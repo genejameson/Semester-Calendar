@@ -551,48 +551,71 @@
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
+            console.log('File selection triggered');
+            console.log('Files:', fileInput.files);
+            console.log('Selected file:', file);
+            
             if (file) {
+                console.log('File details:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: file.lastModified
+                });
+                
                 updateStatus(`📄 Selected: ${file.name}`, 'processing');
                 setTimeout(() => {
                     loadExcelFile(file);
                 }, 100);
             } else {
+                console.log('No file selected');
                 updateStatus('❌ No file selected', 'error');
             }
         }
 
         function loadExcelFile(file) {
             try {
+                console.log('Starting loadExcelFile with:', file.name);
                 updateStatus('📊 Processing Excel file...', 'processing');
                 
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     try {
+                        console.log('FileReader onload event triggered');
                         const data = new Uint8Array(e.target.result);
+                        console.log('File data length:', data.length);
                         
                         if (typeof XLSX === 'undefined') {
+                            console.error('XLSX library not found!');
                             throw new Error('XLSX library not available');
                         }
                         
+                        console.log('XLSX library found, reading workbook...');
                         const workbook = XLSX.read(data, {type: 'array'});
+                        console.log('Workbook created, sheets:', workbook.SheetNames);
+                        
                         processExcelData(workbook);
                         
                         updateStatus(`✅ Calendar generated from ${file.name}`, 'success');
                         document.getElementById('printBtn').style.display = 'block';
                         
                     } catch (error) {
+                        console.error('Error in FileReader onload:', error);
                         updateStatus(`❌ Error processing file: ${error.message}`, 'error');
                     }
                 };
                 
                 reader.onerror = function(error) {
+                    console.error('FileReader error:', error);
                     updateStatus('❌ Error reading file', 'error');
                 };
                 
+                console.log('Starting to read file as ArrayBuffer');
                 reader.readAsArrayBuffer(file);
                 
             } catch (error) {
+                console.error('Error in loadExcelFile:', error);
                 updateStatus(`❌ Error: ${error.message}`, 'error');
             }
         }
