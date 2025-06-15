@@ -538,34 +538,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing app...');
             updateStatus('📱 Ready for file upload');
             
-            // Test XLSX library
-            if (typeof XLSX !== 'undefined') {
-                console.log('✅ XLSX library loaded successfully');
-            } else {
-                console.error('❌ XLSX library failed to load');
-                updateStatus('❌ Excel library not loaded', 'error');
-            }
-            
             const fileInput = document.getElementById('excelFile');
-            console.log('File input element:', fileInput);
-            
-            fileInput.addEventListener('change', function(e) {
-                console.log('Change event triggered');
-                handleFileSelection();
-            });
-            
-            fileInput.addEventListener('input', function(e) {
-                console.log('Input event triggered');
-                handleFileSelection();
-            });
-            
-            // Test file input click
-            fileInput.addEventListener('click', function(e) {
-                console.log('File input clicked');
-            });
+            fileInput.addEventListener('change', handleFileSelection);
+            fileInput.addEventListener('input', handleFileSelection);
             
             document.getElementById('printBtn').addEventListener('click', () => window.print());
         });
@@ -574,71 +551,48 @@
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
-            console.log('File selection triggered');
-            console.log('Files:', fileInput.files);
-            console.log('Selected file:', file);
-            
             if (file) {
-                console.log('File details:', {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    lastModified: file.lastModified
-                });
-                
                 updateStatus(`📄 Selected: ${file.name}`, 'processing');
                 setTimeout(() => {
                     loadExcelFile(file);
                 }, 100);
             } else {
-                console.log('No file selected');
                 updateStatus('❌ No file selected', 'error');
             }
         }
 
         function loadExcelFile(file) {
             try {
-                console.log('Starting loadExcelFile with:', file.name);
                 updateStatus('📊 Processing Excel file...', 'processing');
                 
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     try {
-                        console.log('FileReader onload event triggered');
                         const data = new Uint8Array(e.target.result);
-                        console.log('File data length:', data.length);
                         
                         if (typeof XLSX === 'undefined') {
-                            console.error('XLSX library not found!');
                             throw new Error('XLSX library not available');
                         }
                         
-                        console.log('XLSX library found, reading workbook...');
                         const workbook = XLSX.read(data, {type: 'array'});
-                        console.log('Workbook created, sheets:', workbook.SheetNames);
-                        
                         processExcelData(workbook);
                         
                         updateStatus(`✅ Calendar generated from ${file.name}`, 'success');
                         document.getElementById('printBtn').style.display = 'block';
                         
                     } catch (error) {
-                        console.error('Error in FileReader onload:', error);
                         updateStatus(`❌ Error processing file: ${error.message}`, 'error');
                     }
                 };
                 
                 reader.onerror = function(error) {
-                    console.error('FileReader error:', error);
                     updateStatus('❌ Error reading file', 'error');
                 };
                 
-                console.log('Starting to read file as ArrayBuffer');
                 reader.readAsArrayBuffer(file);
                 
             } catch (error) {
-                console.error('Error in loadExcelFile:', error);
                 updateStatus(`❌ Error: ${error.message}`, 'error');
             }
         }
@@ -974,117 +928,5 @@
                             event.assignment || '',
                             event.assessments || ''
                         ];
-                        );
-                    });
-
-                    if (isNoSchoolDay) {
-                        dayEvents.forEach(event => {
-                            if (event.content && event.content.trim() !== '') {
-                                const contentDiv = document.createElement('div');
-                                contentDiv.className = 'no-school-content';
-                                contentDiv.textContent = event.content;
-                                contentContainer.appendChild(contentDiv);
-                            }
-                        });
-                    } else {
-                        dayEvents.forEach(event => {
-                            if (event.assessments && event.assessments.trim() !== '') {
-                                const assessmentText = event.assessments.toLowerCase();
-                                if (assessmentText.includes('exam') || assessmentText.includes('quiz')) {
-                                    const assessmentDiv = document.createElement('div');
-                                    assessmentDiv.className = 'assessment';
-                                    
-                                    let icon = '🔍';
-                                    if (assessmentText.includes('quiz')) {
-                                        icon = '✏️';
-                                    } else if (assessmentText.includes('exam')) {
-                                        icon = '📋';
-                                    }
-                                    
-                                    assessmentDiv.textContent = `• ${icon} ${event.assessments}`;
-                                    contentContainer.appendChild(assessmentDiv);
-                                }
-                            }
-                        });
-
-                        dayEvents.forEach(event => {
-                            if (event.content && event.content.trim() !== '') {
-                                const contentDiv = document.createElement('div');
-                                contentDiv.className = 'content';
-                                
-                                if (event.content.toLowerCase().includes('exam')) {
-                                    contentDiv.style.fontWeight = 'bold';
-                                    contentDiv.style.color = '#ff0000';
-                                    contentDiv.textContent = `• 📋 ${event.content}`;
-                                } else {
-                                    contentDiv.textContent = `• ${event.content}`;
-                                }
-                                contentContainer.appendChild(contentDiv);
-                            }
-                        });
-                    }
-                }
-
-                dayDiv.appendChild(contentContainer);
-                
-                const assignmentInfo = document.createElement('div');
-                assignmentInfo.style.cssText = `
-                    color: #0066cc;
-                    font-size: 0.85em;
-                    margin-top: 15px;
-                    padding: 10px;
-                `;
-
-                const assignmentItems = [];
-                
-                if (dayEvents.length > 0) {
-                    dayEvents.forEach(event => {
-                        if (event.assignment && String(event.assignment).trim() !== '') {
-                            assignmentItems.push(`• ${event.assignment}`);
-                        }
-                        
-                        if (event.due && String(event.due).trim() !== '') {
-                            let dueText = String(event.due).trim();
-                            
-                            if (/^\d{5}$/.test(dueText)) {
-                                const excelDate = parseInt(dueText);
-                                const convertedDate = new Date((excelDate - 25569 + 1) * 86400 * 1000);
-                                if (!isNaN(convertedDate.getTime())) {
-                                    dueText = convertedDate.toLocaleDateString();
-                                }
-                            }
-                            
-                            assignmentItems.push(`• Due: ${dueText}`);
-                        }
-                        
-                        if (event.assessments && String(event.assessments).trim() !== '') {
-                            assignmentItems.push(`• ${event.assessments}`);
-                        }
-                    });
-                }
-                
-                if (assignmentItems.length > 0) {
-                    assignmentItems.forEach(item => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.textContent = item;
-                        itemDiv.style.marginBottom = '5px';
-                        assignmentInfo.appendChild(itemDiv);
-                    });
-                }
-                
-                dayDiv.appendChild(assignmentInfo);
-                weeklyDays.appendChild(dayDiv);
-            }
-
-            document.getElementById('weeklyView').classList.add('active');
-            document.getElementById('weeklyView').scrollIntoView({ 
-                behavior: 'smooth' 
-            });
-        }
-
-        function closeWeeklyView() {
-            document.getElementById('weeklyView').classList.remove('active');
-        }
-    </script>
-</body>
-</html>
+                        return fields.some(field => 
+                            field.toLowerCase().includes('no school')
