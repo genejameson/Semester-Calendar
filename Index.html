@@ -3,124 +3,931 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar Test</title>
+    <title>Anderson University Semester Calendar</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 2px solid #DAA520;
+            text-align: center;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #DAA520, #B8860B);
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 72px;
+            font-weight: bold;
+            color: #000;
+            box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3);
+            border: 3px solid #000;
+        }
+
+        .title {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #DAA520;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #DAA520;
+        }
+
+        .file-input {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            padding: 15px;
+            font-size: 1.2em;
+            border: 3px solid #DAA520;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #DAA520, #B8860B);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .process-btn {
+            background: linear-gradient(45deg, #000, #333);
+            color: #DAA520;
+            border: 3px solid #DAA520;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+        }
+
+        .process-btn:hover {
+            background: linear-gradient(45deg, #DAA520, #B8860B);
+            color: #000;
+        }
+
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 2px solid #DAA520;
+            display: none;
+            width: 100%;
+        }
+
+        .month-title {
+            text-align: center;
+            font-size: 2em;
+            margin: 20px 0;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            border: 3px solid #000;
+            border-radius: 15px;
+            overflow: hidden;
+            table-layout: fixed;
+        }
+
+        .calendar th,
+        .calendar td {
+            width: 20% !important;
+            box-sizing: border-box;
+        }
+
+        .calendar th {
+            background: #f0f0f0;
+            padding: 15px 10px;
+            text-align: center;
+            border: 2px solid #000;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .calendar td {
+            border: 2px solid #000;
+            padding: 12px 8px;
+            height: 180px;
+            vertical-align: top;
+            font-size: 1em;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .calendar td.clickable {
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .calendar td.clickable:hover,
+        .calendar td.clickable:active {
+            background-color: #e8f4fd;
+            box-shadow: inset 0 0 8px rgba(218, 165, 32, 0.3);
+            transform: scale(1.02);
+        }
+
+        .date {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #0066cc;
+            font-size: 1.4em;
+        }
+
+        .content {
+            color: #008000;
+            margin-bottom: 4px;
+            font-size: 1em;
+            line-height: 1.3;
+        }
+
+        .assessment {
+            color: #ff0000;
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 1em;
+        }
+
+        .empty-day {
+            background: #f9f9f9;
+        }
+
+        .no-class {
+            background: #ffe6e6;
+        }
+
+        .no-school-content {
+            text-align: center;
+            font-weight: bold;
+            color: #666;
+            margin: 10px 0;
+            font-size: 1em;
+        }
+
+        .weekly-view {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 2px solid #DAA520;
+        }
+
+        .weekly-view.active {
+            display: block;
+        }
+
+        .weekly-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #DAA520;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .weekly-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .close-weekly {
+            background: linear-gradient(45deg, #DAA520, #B8860B);
+            color: #000;
+            border: 2px solid #000;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .weekly-days {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            min-height: 500px;
+        }
+
+        .weekly-day {
+            background: #f9f9f9;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .weekly-day-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #DAA520;
+            margin-bottom: 10px;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #DAA520;
+        }
+
+        .weekly-day-date {
+            text-align: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .weekly-content {
+            font-size: 0.9em;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            min-height: 120px;
+        }
+
+        .debug-output {
+            display: none;
+        }
+
+        /* Responsive */
+        @media screen and (max-width: 1024px) {
+            .calendar th {
+                padding: 8px 4px;
+                font-size: 1em;
+            }
+            
+            .calendar td {
+                padding: 6px 4px;
+                height: 140px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0;
+                margin: 0;
+            }
+            
+            .header,
+            .upload-section,
+            .debug-output {
+                display: none !important;
+            }
+
+            .calendar-container {
+                background: white;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                display: block !important;
+            }
+
+            @page {
+                size: letter landscape;
+                margin: 0.4in;
+            }
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0;">
+<body>
+    <div class="header">
+        <div class="logo">🏛️</div>
+        <h1 class="title">Semester Calendar</h1>
+        <p class="subtitle">Anderson University Calendar Generator</p>
+    </div>
+
+    <div class="upload-section">
+        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" />
+        <button class="process-btn" onclick="processSelectedFile()">📂 Generate Calendar</button>
+        <div id="status" class="status">📱 Select Excel file and click Generate Calendar</div>
+        <button id="printBtn" class="process-btn" onclick="window.print()" style="display: none;">🖨️ Print Calendar</button>
+    </div>
+
+    <div id="calendarContainer" class="calendar-container"></div>
     
-    <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; margin-bottom: 20px;">
-        <h1>🏛️ Calendar Test</h1>
-        <p>Testing basic functionality</p>
+    <div id="weeklyView" class="weekly-view">
+        <div class="weekly-header">
+            <div id="weeklyTitle" class="weekly-title">Week View</div>
+            <button class="close-weekly" onclick="closeWeeklyView()">✕ Close</button>
+        </div>
+        <div id="weeklyDays" class="weekly-days"></div>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-        <input type="file" id="testFile" accept=".xlsx,.xls" style="display: block; width: 100%; padding: 15px; font-size: 16px; margin-bottom: 15px;">
-        <button onclick="testFunction()" style="background: #DAA520; color: black; padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">Test Button</button>
-        <div id="status" style="margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 5px;">Ready to test</div>
-    </div>
-
-    <div id="output" style="background: white; padding: 20px; border-radius: 15px; font-family: monospace; white-space: pre-wrap; min-height: 200px;">
-Test Output:
+    <div id="debugOutput" class="debug-output">
+Debug Output:
     </div>
 
     <script>
+        let allEventsByDate = {};
+
         function log(message) {
-            const output = document.getElementById('output');
+            const output = document.getElementById('debugOutput');
             const now = new Date().toLocaleTimeString();
             output.textContent += `[${now}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
         }
 
-        function testFunction() {
-            log('🔘 Test button clicked!');
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function processSelectedFile() {
+            log('🔘 Generate Calendar button clicked');
             
-            // Test XLSX library
-            if (typeof XLSX !== 'undefined') {
-                log('✅ XLSX library is available');
-            } else {
-                log('❌ XLSX library is NOT available');
-            }
-            
-            // Test file input
-            const fileInput = document.getElementById('testFile');
+            const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
             if (file) {
                 log(`📁 File selected: ${file.name} (${file.size} bytes)`);
-                processFile(file);
+                updateStatus(`📄 Processing: ${file.name}`, 'info');
+                loadExcelFile(file);
             } else {
                 log('❌ No file selected');
+                updateStatus('❌ Please select an Excel file first', 'error');
             }
         }
 
-        function processFile(file) {
-            log('🔄 Starting file processing...');
-            
+        function loadExcelFile(file) {
             try {
+                log('🔄 Starting file processing...');
+                
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
-                    log('✅ FileReader loaded successfully');
-                    
                     try {
+                        log('✅ FileReader loaded successfully');
+                        
                         const data = new Uint8Array(e.target.result);
                         log(`📊 File data: ${data.length} bytes`);
+                        
+                        if (typeof XLSX === 'undefined') {
+                            throw new Error('XLSX library not available');
+                        }
                         
                         const workbook = XLSX.read(data, {type: 'array'});
                         log(`📚 Workbook sheets: ${workbook.SheetNames.join(', ')}`);
                         
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                        log(`📋 Data rows: ${jsonData.length}`);
+                        processExcelData(workbook);
                         
-                        if (jsonData.length > 0) {
-                            log(`📄 Columns: ${Object.keys(jsonData[0]).join(', ')}`);
-                            log('🎉 SUCCESS! Excel file processed correctly');
-                            
-                            document.getElementById('status').textContent = `✅ Success! Found ${jsonData.length} rows`;
-                            document.getElementById('status').style.background = '#d4edda';
-                            document.getElementById('status').style.color = '#155724';
-                        }
+                        updateStatus(`✅ Calendar generated from ${file.name}`, 'success');
+                        document.getElementById('printBtn').style.display = 'block';
                         
                     } catch (error) {
                         log(`❌ Error processing Excel: ${error.message}`);
+                        updateStatus(`❌ Error: ${error.message}`, 'error');
                     }
                 };
                 
                 reader.onerror = function() {
                     log('❌ FileReader error');
+                    updateStatus('❌ Error reading file', 'error');
                 };
                 
                 reader.readAsArrayBuffer(file);
                 
             } catch (error) {
-                log(`❌ Error: ${error.message}`);
+                log(`❌ Error in loadExcelFile: ${error.message}`);
+                updateStatus(`❌ Error: ${error.message}`, 'error');
             }
         }
 
-        // Test on page load
-        window.addEventListener('load', function() {
-            log('🚀 Page loaded');
-            log('🔍 Testing basic functionality...');
-            
-            if (typeof XLSX !== 'undefined') {
-                log('✅ XLSX library loaded on page load');
-            } else {
-                log('❌ XLSX library failed to load');
-            }
-            
-            log('📱 Ready for testing - select an Excel file and click Test Button');
-        });
-
-        // Test file input
-        document.addEventListener('DOMContentLoaded', function() {
-            const fileInput = document.getElementById('testFile');
-            fileInput.addEventListener('change', function() {
-                log('📁 File input changed');
-                const file = this.files[0];
-                if (file) {
-                    log(`📄 File selected automatically: ${file.name}`);
+        function processExcelData(workbook) {
+            try {
+                log('🔍 Starting Excel data processing');
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const data = XLSX.utils.sheet_to_json(worksheet);
+                
+                log(`📋 Data rows: ${data.length}`);
+                
+                if (data.length === 0) {
+                    throw new Error('No data found in Excel file');
                 }
+
+                if (data.length > 0) {
+                    log(`📄 Columns: ${Object.keys(data[0]).join(', ')}`);
+                }
+
+                const eventsByMonth = {};
+                let lastDate = null;
+                let processedCount = 0;
+
+                data.forEach((row, index) => {
+                    try {
+                        let dateValue = row['Date'];
+                        
+                        if (!dateValue || dateValue === '') {
+                            if (lastDate) {
+                                dateValue = lastDate;
+                            } else {
+                                return;
+                            }
+                        } else {
+                            lastDate = dateValue;
+                        }
+
+                        let eventDate;
+                        if (typeof dateValue === 'number') {
+                            eventDate = new Date((dateValue - 25569 + 1) * 86400 * 1000);
+                        } else if (typeof dateValue === 'string') {
+                            const parts = dateValue.split('/');
+                            if (parts.length === 3) {
+                                let month = parseInt(parts[0]);
+                                let day = parseInt(parts[1]);
+                                let year = parseInt(parts[2]);
+                                
+                                if (year < 100) {
+                                    year += 2000;
+                                }
+                                
+                                eventDate = new Date(year, month - 1, day);
+                            } else {
+                                eventDate = new Date(dateValue);
+                            }
+                        } else {
+                            eventDate = new Date(dateValue);
+                        }
+
+                        if (isNaN(eventDate.getTime())) {
+                            return;
+                        }
+
+                        const dayOfWeek = eventDate.getDay();
+                        if (dayOfWeek === 0 || dayOfWeek === 6) {
+                            return;
+                        }
+
+                        const monthKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+
+                        if (!eventsByMonth[monthKey]) {
+                            eventsByMonth[monthKey] = [];
+                        }
+
+                        const eventObj = {
+                            date: eventDate,
+                            day: eventDate.getDate(),
+                            dayOfWeek: eventDate.getDay(),
+                            dayOfClass: row['Day of class'] || '',
+                            dayOfWeekStr: row['Day of the week'] || '',
+                            material: row['Material'] || '',
+                            content: row['Content'] || '',
+                            assignment: row['Assignment'] || '',
+                            assessments: row['Assessments'] || '',
+                            due: row['Due'] || ''
+                        };
+
+                        eventsByMonth[monthKey].push(eventObj);
+                        processedCount++;
+                        
+                    } catch (rowError) {
+                        log(`⚠️ Error processing row ${index}: ${rowError.message}`);
+                    }
+                });
+
+                log(`✅ Processed ${processedCount} events for ${Object.keys(eventsByMonth).length} months`);
+                generateCalendarHTML(eventsByMonth);
+                
+            } catch (error) {
+                log(`❌ Error in processExcelData: ${error.message}`);
+                throw error;
+            }
+        }
+
+        function generateCalendarHTML(eventsByMonth) {
+            try {
+                log('🎨 Generating calendar HTML');
+                
+                const container = document.getElementById('calendarContainer');
+                container.innerHTML = '';
+                container.style.display = 'block';
+
+                if (Object.keys(eventsByMonth).length === 0) {
+                    container.innerHTML = '<p style="text-align: center; font-size: 1.2em; color: #666;">No valid weekday events found in the data.</p>';
+                    return;
+                }
+
+                const sortedMonths = Object.keys(eventsByMonth).sort();
+                log(`📅 Creating calendars for: ${sortedMonths.join(', ')}`);
+
+                sortedMonths.forEach(monthKey => {
+                    const [year, month] = monthKey.split('-').map(Number);
+                    const events = eventsByMonth[monthKey];
+
+                    const monthContainer = document.createElement('div');
+                    monthContainer.className = 'month-container';
+
+                    const monthTitle = document.createElement('h2');
+                    monthTitle.className = 'month-title';
+                    const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
+                    monthTitle.textContent = `${monthName} ${year}`;
+                    monthContainer.appendChild(monthTitle);
+
+                    const table = document.createElement('table');
+                    table.className = 'calendar';
+
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+                    dayNames.forEach(day => {
+                        const th = document.createElement('th');
+                        th.textContent = day;
+                        headerRow.appendChild(th);
+                    });
+
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    const tbody = document.createElement('tbody');
+                    const firstDay = new Date(year, month - 1, 1);
+                    const lastDay = new Date(year, month, 0);
+                    
+                    let currentWeekStart = new Date(firstDay);
+                    while (currentWeekStart.getDay() !== 1) {
+                        currentWeekStart.setDate(currentWeekStart.getDate() - 1);
+                    }
+
+                    while (currentWeekStart <= lastDay) {
+                        let hasCurrentMonthDays = false;
+                        for (let checkDay = 0; checkDay < 5; checkDay++) {
+                            const checkDate = new Date(currentWeekStart);
+                            checkDate.setDate(currentWeekStart.getDate() + checkDay);
+                            if (checkDate.getMonth() === month - 1) {
+                                hasCurrentMonthDays = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasCurrentMonthDays) {
+                            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                            continue;
+                        }
+                        
+                        const row = document.createElement('tr');
+                        
+                        for (let weekdayNum = 1; weekdayNum <= 5; weekdayNum++) {
+                            const cell = document.createElement('td');
+                            
+                            const currentDate = new Date(currentWeekStart);
+                            currentDate.setDate(currentWeekStart.getDate() + (weekdayNum - 1));
+                            
+                            if (currentDate.getMonth() !== month - 1) {
+                                cell.className = 'empty-day';
+                            } else {
+                                const dateDiv = document.createElement('div');
+                                dateDiv.className = 'date';
+                                dateDiv.textContent = currentDate.getDate();
+                                cell.appendChild(dateDiv);
+
+                                const dayEvents = events.filter(event => 
+                                    event.date.getDate() === currentDate.getDate() &&
+                                    event.date.getMonth() === currentDate.getMonth() &&
+                                    event.date.getFullYear() === currentDate.getFullYear()
+                                );
+
+                                // Store events for weekly view
+                                const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+                                allEventsByDate[dateKey] = dayEvents;
+
+                                // Make cell clickable if it has events
+                                if (dayEvents.length > 0) {
+                                    cell.classList.add('clickable');
+                                    cell.title = 'Tap to view detailed week view';
+                                    
+                                    cell.addEventListener('click', function() {
+                                        openWeeklyView(new Date(currentDate));
+                                    });
+                                }
+
+                                let isNoSchoolDay = false;
+                                if (dayEvents.length > 0) {
+                                    isNoSchoolDay = dayEvents.some(event => {
+                                        const fields = [
+                                            event.material || '',
+                                            event.content || '',
+                                            event.assignment || '',
+                                            event.assessments || ''
+                                        ];
+                                        
+                                        return fields.some(field => 
+                                            field.toLowerCase().includes('no school')
+                                        );
+                                    });
+                                    
+                                    if (isNoSchoolDay) {
+                                        cell.className = 'no-class';
+                                    }
+                                }
+
+                                if (isNoSchoolDay) {
+                                    dayEvents.forEach(event => {
+                                        if (event.content && event.content.trim() !== '') {
+                                            const contentDiv = document.createElement('div');
+                                            contentDiv.className = 'no-school-content';
+                                            contentDiv.textContent = event.content;
+                                            cell.appendChild(contentDiv);
+                                        }
+                                    });
+                                } else {
+                                    dayEvents.forEach(event => {
+                                        if (event.assessments && event.assessments.trim() !== '') {
+                                            const assessmentText = event.assessments.toLowerCase();
+                                            if (assessmentText.includes('exam') || assessmentText.includes('quiz')) {
+                                                const assessmentDiv = document.createElement('div');
+                                                assessmentDiv.className = 'assessment';
+                                                
+                                                let icon = '🔍';
+                                                if (assessmentText.includes('quiz')) {
+                                                    icon = '✏️';
+                                                } else if (assessmentText.includes('exam')) {
+                                                    icon = '📋';
+                                                }
+                                                
+                                                assessmentDiv.textContent = `• ${icon} ${event.assessments}`;
+                                                cell.appendChild(assessmentDiv);
+                                            }
+                                        }
+                                    });
+
+                                    dayEvents.forEach(event => {
+                                        if (event.content && event.content.trim() !== '') {
+                                            const contentDiv = document.createElement('div');
+                                            contentDiv.className = 'content';
+                                            
+                                            if (event.content.toLowerCase().includes('exam')) {
+                                                contentDiv.style.fontWeight = 'bold';
+                                                contentDiv.style.color = '#ff0000';
+                                                contentDiv.textContent = `• 📋 ${event.content}`;
+                                            } else {
+                                                contentDiv.textContent = `• ${event.content}`;
+                                            }
+                                            cell.appendChild(contentDiv);
+                                        }
+                                    });
+                                }
+                            }
+
+                            row.appendChild(cell);
+                        }
+
+                        tbody.appendChild(row);
+                        currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+                        
+                        if (currentWeekStart.getMonth() !== month - 1 && currentWeekStart > lastDay) {
+                            break;
+                        }
+                    }
+
+                    table.appendChild(tbody);
+                    monthContainer.appendChild(table);
+                    container.appendChild(monthContainer);
+                });
+                
+                log('🎉 Calendar generation complete!');
+                
+            } catch (error) {
+                log(`❌ Error generating calendar: ${error.message}`);
+                throw error;
+            }
+        }
+
+        function openWeeklyView(clickedDate) {
+            const date = new Date(clickedDate);
+            const dayOfWeek = date.getDay();
+            const monday = new Date(date);
+            monday.setDate(date.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+
+            const weekEnd = new Date(monday);
+            weekEnd.setDate(monday.getDate() + 4);
+            
+            const titleElement = document.getElementById('weeklyTitle');
+            titleElement.textContent = `Week of ${monday.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
+
+            const weeklyDays = document.getElementById('weeklyDays');
+            weeklyDays.innerHTML = '';
+
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            
+            for (let i = 0; i < 5; i++) {
+                const currentDate = new Date(monday);
+                currentDate.setDate(monday.getDate() + i);
+                
+                const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'weekly-day';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'weekly-day-header';
+                headerDiv.textContent = dayNames[i];
+                dayDiv.appendChild(headerDiv);
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'weekly-day-date';
+                dateDiv.textContent = currentDate.getDate();
+                dayDiv.appendChild(dateDiv);
+
+                const contentContainer = document.createElement('div');
+                contentContainer.className = 'weekly-content';
+
+                const dayEvents = allEventsByDate[dateKey] || [];
+                
+                if (dayEvents.length > 0) {
+                    const isNoSchoolDay = dayEvents.some(event => {
+                        const fields = [
+                            event.material || '',
+                            event.content || '',
+                            event.assignment || '',
+                            event.assessments || ''
+                        ];
+                        return fields.some(field => 
+                            field.toLowerCase().includes('no school')
+                        );
+                    });
+
+                    if (isNoSchoolDay) {
+                        dayEvents.forEach(event => {
+                            if (event.content && event.content.trim() !== '') {
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'no-school-content';
+                                contentDiv.textContent = event.content;
+                                contentContainer.appendChild(contentDiv);
+                            }
+                        });
+                    } else {
+                        dayEvents.forEach(event => {
+                            if (event.assessments && event.assessments.trim() !== '') {
+                                const assessmentText = event.assessments.toLowerCase();
+                                if (assessmentText.includes('exam') || assessmentText.includes('quiz')) {
+                                    const assessmentDiv = document.createElement('div');
+                                    assessmentDiv.className = 'assessment';
+                                    
+                                    let icon = '🔍';
+                                    if (assessmentText.includes('quiz')) {
+                                        icon = '✏️';
+                                    } else if (assessmentText.includes('exam')) {
+                                        icon = '📋';
+                                    }
+                                    
+                                    assessmentDiv.textContent = `• ${icon} ${event.assessments}`;
+                                    contentContainer.appendChild(assessmentDiv);
+                                }
+                            }
+                        });
+
+                        dayEvents.forEach(event => {
+                            if (event.content && event.content.trim() !== '') {
+                                const contentDiv = document.createElement('div');
+                                contentDiv.className = 'content';
+                                
+                                if (event.content.toLowerCase().includes('exam')) {
+                                    contentDiv.style.fontWeight = 'bold';
+                                    contentDiv.style.color = '#ff0000';
+                                    contentDiv.textContent = `• 📋 ${event.content}`;
+                                } else {
+                                    contentDiv.textContent = `• ${event.content}`;
+                                }
+                                contentContainer.appendChild(contentDiv);
+                            }
+                        });
+                    }
+                }
+
+                dayDiv.appendChild(contentContainer);
+                
+                const assignmentInfo = document.createElement('div');
+                assignmentInfo.style.cssText = `
+                    color: #0066cc;
+                    font-size: 0.85em;
+                    margin-top: 15px;
+                    padding: 10px;
+                `;
+
+                const assignmentItems = [];
+                
+                if (dayEvents.length > 0) {
+                    dayEvents.forEach(event => {
+                        if (event.assignment && String(event.assignment).trim() !== '') {
+                            assignmentItems.push(`• ${event.assignment}`);
+                        }
+                        
+                        if (event.due && String(event.due).trim() !== '') {
+                            let dueText = String(event.due).trim();
+                            
+                            if (/^\d{5}$/.test(dueText)) {
+                                const excelDate = parseInt(dueText);
+                                const convertedDate = new Date((excelDate - 25569 + 1) * 86400 * 1000);
+                                if (!isNaN(convertedDate.getTime())) {
+                                    dueText = convertedDate.toLocaleDateString();
+                                }
+                            }
+                            
+                            assignmentItems.push(`• Due: ${dueText}`);
+                        }
+                        
+                        if (event.assessments && String(event.assessments).trim() !== '') {
+                            assignmentItems.push(`• ${event.assessments}`);
+                        }
+                    });
+                }
+                
+                if (assignmentItems.length > 0) {
+                    assignmentItems.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.textContent = item;
+                        itemDiv.style.marginBottom = '5px';
+                        assignmentInfo.appendChild(itemDiv);
+                    });
+                }
+                
+                dayDiv.appendChild(assignmentInfo);
+                weeklyDays.appendChild(dayDiv);
+            }
+
+            document.getElementById('weeklyView').classList.add('active');
+            document.getElementById('weeklyView').scrollIntoView({ 
+                behavior: 'smooth' 
             });
+        }
+
+        // Initialize
+        window.addEventListener('load', function() {
+            if (typeof XLSX === 'undefined') {
+                updateStatus('❌ Excel library not loaded', 'error');
+            }
         });
     </script>
 </body>
