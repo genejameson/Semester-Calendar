@@ -521,7 +521,7 @@
     <div id="calendarContainer" class="calendar-container"></div>
     
     <div id="debugOutput" style="background: #f8f9fa; border: 2px solid #007bff; border-radius: 10px; padding: 15px; margin: 20px 0; font-family: monospace; font-size: 0.9em; color: #495057; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
-        <strong>Debug Output:</strong><br>
+        Debug Output:<br>
     </div>
     
     <div id="weeklyView" class="weekly-view">
@@ -604,25 +604,25 @@
 
         function loadExcelFile(file) {
             try {
-                console.log('Starting loadExcelFile with:', file.name);
+                addDebugMessage(`📂 Starting loadExcelFile with: ${file.name}`);
                 updateStatus('📊 Processing Excel file...', 'processing');
                 
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
                     try {
-                        console.log('FileReader onload event triggered');
+                        addDebugMessage('✅ FileReader onload event triggered');
                         const data = new Uint8Array(e.target.result);
-                        console.log('File data length:', data.length);
+                        addDebugMessage(`📊 File data length: ${data.length} bytes`);
                         
                         if (typeof XLSX === 'undefined') {
-                            console.error('XLSX library not found!');
+                            addDebugMessage('❌ XLSX library not found!');
                             throw new Error('XLSX library not available');
                         }
                         
-                        console.log('XLSX library found, reading workbook...');
+                        addDebugMessage('📋 XLSX library found, reading workbook...');
                         const workbook = XLSX.read(data, {type: 'array'});
-                        console.log('Workbook created, sheets:', workbook.SheetNames);
+                        addDebugMessage(`📚 Workbook created, sheets: ${workbook.SheetNames.join(', ')}`);
                         
                         processExcelData(workbook);
                         
@@ -630,37 +630,49 @@
                         document.getElementById('printBtn').style.display = 'block';
                         
                     } catch (error) {
-                        console.error('Error in FileReader onload:', error);
+                        addDebugMessage(`❌ Error in FileReader onload: ${error.message}`);
                         updateStatus(`❌ Error processing file: ${error.message}`, 'error');
                     }
                 };
                 
                 reader.onerror = function(error) {
-                    console.error('FileReader error:', error);
+                    addDebugMessage(`❌ FileReader error: ${error}`);
                     updateStatus('❌ Error reading file', 'error');
                 };
                 
-                console.log('Starting to read file as ArrayBuffer');
+                addDebugMessage('🔄 Starting to read file as ArrayBuffer');
                 reader.readAsArrayBuffer(file);
                 
             } catch (error) {
-                console.error('Error in loadExcelFile:', error);
+                addDebugMessage(`❌ Error in loadExcelFile: ${error.message}`);
                 updateStatus(`❌ Error: ${error.message}`, 'error');
             }
         }
 
         function processExcelData(workbook) {
             try {
+                addDebugMessage('🔍 Starting Excel data processing');
+                
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
+                addDebugMessage(`📄 Processing sheet: ${firstSheetName}`);
+
                 const data = XLSX.utils.sheet_to_json(worksheet);
+                addDebugMessage(`📊 Converted to JSON: ${data.length} rows`);
 
                 if (data.length === 0) {
+                    addDebugMessage('❌ No data found in Excel file');
                     throw new Error('No data found in Excel file');
+                }
+
+                // Log first row for debugging
+                if (data.length > 0) {
+                    addDebugMessage(`📋 First row columns: ${Object.keys(data[0]).join(', ')}`);
                 }
 
                 const eventsByMonth = {};
                 let lastDate = null;
+                let processedCount = 0;
 
                 data.forEach((row, index) => {
                     try {
@@ -727,15 +739,18 @@
                         };
 
                         eventsByMonth[monthKey].push(eventObj);
+                        processedCount++;
                         
                     } catch (rowError) {
-                        // Skip problematic rows
+                        addDebugMessage(`⚠️ Error processing row ${index}: ${rowError.message}`);
                     }
                 });
 
+                addDebugMessage(`✅ Processed ${processedCount} events for ${Object.keys(eventsByMonth).length} months`);
                 generateCalendarHTML(eventsByMonth);
                 
             } catch (error) {
+                addDebugMessage(`❌ Error in processExcelData: ${error.message}`);
                 throw error;
             }
         }
