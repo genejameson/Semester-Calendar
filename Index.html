@@ -1,4 +1,29 @@
-<!DOCTYPE html>
+/* iPad specific optimizations */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .header {
+                padding: 40px;
+            }
+            
+            .logo {
+                width: 140px;
+                height: 140px;
+                font-size: 84px;
+            }
+            
+            .title {
+                font-size: 2.8em;
+            }
+            
+            .subtitle {
+                font-size: 1.4em;
+            }
+            
+            .file-button {
+                height: 80px;
+                font-size: 1.6em;
+                line-height: 74px;
+            }
+        }<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -78,11 +103,12 @@
         }
 
         .file-input {
-            width: 100%;
-            height: 60px;
-            opacity: 0;
             position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
             cursor: pointer;
+            z-index: 2;
         }
 
         .file-button {
@@ -100,6 +126,8 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3);
+            position: relative;
+            z-index: 1;
         }
 
         .file-button:hover {
@@ -162,8 +190,8 @@
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             border: 2px solid #DAA520;
-            overflow-x: auto;
             display: none;
+            width: 100%;
         }
 
         .month-title {
@@ -176,12 +204,12 @@
 
         .calendar {
             width: 100%;
-            min-width: 800px;
             border-collapse: collapse;
             margin-bottom: 30px;
             border: 3px solid #000;
             border-radius: 15px;
             overflow: hidden;
+            table-layout: fixed;
         }
 
         .calendar th {
@@ -192,6 +220,7 @@
             font-size: 1.3em;
             font-weight: bold;
             color: #333;
+            width: 20%;
         }
 
         .calendar td {
@@ -202,6 +231,7 @@
             font-size: 1em;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            width: 20%;
         }
 
         .date {
@@ -255,39 +285,95 @@
             overflow-y: auto;
         }
 
-        /* iPad specific optimizations */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .header {
-                padding: 40px;
-            }
-            
-            .logo {
-                width: 140px;
-                height: 140px;
-                font-size: 84px;
-            }
-            
-            .title {
-                font-size: 2.8em;
-            }
-            
-            .subtitle {
-                font-size: 1.4em;
-            }
-            
-            .file-button {
-                height: 80px;
-                font-size: 1.6em;
-                line-height: 74px;
-            }
-            
-            .calendar {
-                min-width: 1000px;
+        /* Responsive calendar sizing */
+        @media screen and (max-width: 1024px) {
+            .calendar th {
+                padding: 8px 4px;
+                font-size: 1em;
             }
             
             .calendar td {
-                height: 200px;
-                padding: 15px 10px;
+                padding: 6px 4px;
+                height: 140px;
+                font-size: 0.85em;
+            }
+            
+            .date {
+                font-size: 1.1em;
+                margin-bottom: 4px;
+            }
+            
+            .content, .assessment {
+                font-size: 0.8em;
+                line-height: 1.2;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .calendar th {
+                padding: 6px 2px;
+                font-size: 0.9em;
+            }
+            
+            .calendar td {
+                padding: 4px 2px;
+                height: 120px;
+                font-size: 0.75em;
+            }
+            
+            .date {
+                font-size: 1em;
+                margin-bottom: 3px;
+            }
+            
+            .content, .assessment {
+                font-size: 0.7em;
+                line-height: 1.1;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .calendar th {
+                padding: 4px 1px;
+                font-size: 0.8em;
+            }
+            
+            .calendar td {
+                padding: 3px 1px;
+                height: 100px;
+                font-size: 0.65em;
+            }
+            
+            .date {
+                font-size: 0.9em;
+                margin-bottom: 2px;
+            }
+            
+            .content, .assessment {
+                font-size: 0.6em;
+                line-height: 1.0;
+            }
+        }
+
+        /* Landscape orientation optimizations */
+        @media screen and (orientation: landscape) and (max-height: 800px) {
+            .calendar td {
+                height: 120px;
+            }
+            
+            .calendar th {
+                padding: 6px 4px;
+            }
+        }
+
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            .calendar td {
+                height: 100px;
+                font-size: 0.8em;
+            }
+            
+            .date {
+                font-size: 1em;
             }
         }
 
@@ -375,8 +461,15 @@
             debugLog('App initialized');
             updateStatus('📱 Ready for file upload');
             
-            // File input handler
-            document.getElementById('excelFile').addEventListener('change', handleFileSelection);
+            // File input handler - multiple event types for iPad compatibility
+            const fileInput = document.getElementById('excelFile');
+            fileInput.addEventListener('change', handleFileSelection);
+            fileInput.addEventListener('input', handleFileSelection);
+            
+            // Also add click logging
+            fileInput.addEventListener('click', function() {
+                debugLog('File input clicked');
+            });
             document.getElementById('printBtn').addEventListener('click', () => window.print());
             
             // Test XLSX library
@@ -392,12 +485,20 @@
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
+            debugLog(`File selection triggered`);
+            debugLog(`Files length: ${fileInput.files.length}`);
             debugLog(`File selected: ${file ? file.name : 'none'}`);
             
             if (file) {
                 debugLog(`File details: ${file.name}, ${file.size} bytes, type: ${file.type}`);
-                loadExcelFile(file);
+                updateStatus(`📄 Selected: ${file.name}`, 'processing');
+                
+                // Add a small delay to ensure UI updates
+                setTimeout(() => {
+                    loadExcelFile(file);
+                }, 100);
             } else {
+                debugLog('No file in selection');
                 updateStatus('❌ No file selected', 'error');
             }
         }
