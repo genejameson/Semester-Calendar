@@ -1,0 +1,20 @@
+{
+  "name": "Anderson University Semester Calendar",
+  "short_name": "Semester Calendar",
+  "description": "Transform your Excel schedule into a printable calendar",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#DAA520",
+  "orientation": "landscape-primary",
+  "categories": ["education", "productivity", "utilities"],
+  "icons": [
+  {
+    "src": "icons/icon-512x512.png",
+    "sizes": "512x512",
+    "type": "image/png",
+    "purpose": "maskable any"
+  }
+]
+  ]
+}
